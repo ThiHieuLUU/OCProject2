@@ -117,13 +117,44 @@ def make_directory(dir_path, dir_name):
         os.mkdir(new_dir_path)
     return new_dir_path
 
+def demo(nbr_keys):
+    # For demo
+    categories = get_first_link_for_categories(url)
+    keys = list(categories.keys())
+    keys_ = keys[0:nbr_keys:1]
+    print(keys_)
+    categories_ = {key: categories[key] for key in keys_}
+    print(categories_)
+    # scrape categories and save results to csv_data directory and images directory.
+    print("Start of saving csv")
+    save_category_csv(categories_)
+    print("End of saving csv")
+    print("="*10)
+    print("Start of saving csv")
+    save_category_images(categories_)
+    print("End of saving csv")
+
+def main():
+    categories = get_first_link_for_categories(url)
+    # scrape categories and save results to csv_data directory and images directory.
+    print("Start of saving csv")
+    save_category_csv(categories)
+    print("End of saving csv")
+    print("="*10)
+    print("Start of saving csv")
+    save_category_images(categories)
+    print("End of saving csv")
 
 if __name__ == "__main__":
-    categories = get_first_link_for_categories(url)
+    # For demo
+    nbr_categories = 2
+    demo(nbr_categories)
 
-    # scrape categories and save results to csv_data directory and images directory.
-    save_category_csv(categories)
-    save_category_images(categories)
+    # For running the project
+    # main()
+
+
+
 
 
 
