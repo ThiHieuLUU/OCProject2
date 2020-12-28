@@ -23,32 +23,32 @@ HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) '
                                                                    "deflate"}
 
 
-def has_next(current_url):
-    """Check if the current page has a link to go to the next page"""
-    response = requests.get(current_url, headers=HEADERS)
-    soup = BeautifulSoup(response.text, 'lxml')
-    result = soup.find('li', class_="next")
-    return result is not None
+def has_next(soup: BeautifulSoup) -> (bool, str):
+    """Check if the current page has a link to go to the next page."""
+
+    res = soup.find('li', class_="next")
+    return res is not None, res
 
 
-def get_next_page(current_url):
-    """Retrieve the link of the next page if this exists"""
-    response = requests.get(current_url, headers=HEADERS)
-    soup = BeautifulSoup(response.text, 'lxml')
-    result = soup.find('li', class_="next")
-    if result is not None:
-        result = result.a['href']
-        suffix = current_url.rsplit('/', 1)[-1]
-        next_url = current_url.replace(suffix, result)
-        return next_url
+def get_next_page(current_url: str, soup: BeautifulSoup) -> str:
+    """Retrieve the link of the next page if this exists."""
+
+    res, class_next = has_next(soup)
+    next_url = None
+    if res:
+        href = class_next.a['href']
+        current_suffix = current_url.rsplit('/', 1)[-1]
+        next_url = current_url.replace(current_suffix, href)
+    return next_url
 
 
-def get_all_book_links_per_caterogy(url):
-    """Find all links of books in a given url"""
+def get_all_book_links_per_category(url: str) -> list:
+    """Find all book links in a given url."""
+
     all_book_links = []
     res = True
-    i = 1
     while res:
+        # Get all book links of a category page
         response = requests.get(url, headers=HEADERS)
         soup = BeautifulSoup(response.text, 'lxml')
         book_names = soup.find_all('a', href=re.compile('^../../../'),
@@ -56,12 +56,12 @@ def get_all_book_links_per_caterogy(url):
 
         prefix = "http://books.toscrape.com/catalogue/"
         for book in book_names:
-            book_link_split = book['href'].split(sep="/")
-            book_link = prefix + book_link_split[-2] + "/" + book_link_split[
-                -1]
+            book_link_split = book['href'].split("../../../", 1)
+            book_link = prefix + book_link_split[-1]
             all_book_links.append(book_link)
-        res = has_next(url)
+
+        # Check if the current page has the next page
+        res = has_next(soup)[0]
         if res:
-            i += 1
-            url = get_next_page(url)
+            url = get_next_page(url, soup)
     return all_book_links

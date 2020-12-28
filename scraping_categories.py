@@ -1,8 +1,7 @@
 #! /usr/bin/venv python3
 # coding: utf-8
 
-"""This module is used to retrieve all categories
-in the website 'Books to Scrape'
+"""This module is used to retrieve all categories in the website 'Books to Scrape'.
 """
 
 import re
@@ -28,37 +27,45 @@ HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) '
                                                                    "deflate"}
 CURRENT_DIR_PATH = os.getcwd()
 
-url = 'http://books.toscrape.com/'
+URL = 'http://books.toscrape.com/'
 
 
-def get_first_link_for_categories(url):
-    """Retrieve all first category links from the url of the Home page"""
+def get_first_link_for_categories(url: str) -> dict:
+    """Retrieve all first category links from the url of the Home page."""
+
     response = requests.get(url, headers=HEADERS)
     soup = BeautifulSoup(response.text, 'lxml')
-    # Find the links of all catalogues
+
+    # Find the first links for all categories
     categories = {}
     links = []
+
     category_links = soup.find('div', class_="side_categories") \
+        .find('ul') \
+        .find('li') \
+        .find('ul') \
         .find_all('a', href=re.compile('catalogue'))
 
-    # Built and get all links except the first (book_1: link of the home page)
-    [links.append(url + category_links[i]['href']) for i in
-     range(1, len(category_links), 1)]
+    # Built and get all first category links
+    for category_link in category_links:
+        links.append(url + category_link['href'])
 
     for link in links:
         category_name = link.rsplit('/', 2)[-2]
         categories[category_name] = link
-
-    # [print(key + ': ' + categories[key] + '\n') for key in categories]
     return categories
 
 
-def save_category_csv(categories):
+def save_category_csv(categories: dict) -> None:
+    """Create a "csv_data" directory.
+
+    In this directory, book's information is saved for each category in a
+    csv file (each csv file name is a category name).
+    """
+
     dir_path = make_directory(CURRENT_DIR_PATH, "csv_data")
     os.chdir(dir_path)
-    for category_name in categories:
-        category_link = categories[category_name]
-
+    for category_name, category_link in categories.items():
         file_name = category_name + '.csv'
         fieldnames = ['product_page_url',
                       'universal_product_code',
@@ -71,10 +78,10 @@ def save_category_csv(categories):
                       'review_rating',
                       'image_url']
 
-        all_book_links = category.get_all_book_links_per_caterogy(
+        all_book_links = category.get_all_book_links_per_category(
             category_link)
-        with open(file_name, 'w', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        with open(file_name, 'w', newline='') as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
             writer.writeheader()
 
             for link in all_book_links:
@@ -82,15 +89,21 @@ def save_category_csv(categories):
                 writer.writerow(book_info)
 
 
-def save_category_images(categories):
+def save_category_images(categories: dict) -> None:
+    """Create a "images" directory.
+
+    In this directory, book's images are saved for each category in a
+    sub-directory (each sub-directory name is a category name).
+    """
+
     parent_dir_path = make_directory(CURRENT_DIR_PATH, "images")
     os.chdir(parent_dir_path)
 
-    for category_name in categories:
-        category_link = categories[category_name]
+    for category_name, category_link in categories.items():
         sub_dir_path = make_directory(parent_dir_path, category_name)
         os.chdir(sub_dir_path)
-        all_book_links = category.get_all_book_links_per_caterogy(category_link)
+        all_book_links = category.get_all_book_links_per_category(
+            category_link)
 
         for link in all_book_links:
             book_info = book.get_book_info(link)
@@ -98,8 +111,9 @@ def save_category_images(categories):
             save_image(image_url, title)
 
 
-def save_image(image_url, title):
-    """Download an image from its url and save it in current directory"""
+def save_image(image_url: str, title: str) -> None:
+    """Download an image from its url and save it in current directory."""
+
     response = requests.get(image_url)
     img_format = image_url.rsplit(".", 1)[-1]  # jpg, png, etc.
     image_file_name = title + "." + img_format
@@ -108,53 +122,55 @@ def save_image(image_url, title):
     img_file.close()
 
 
-def make_directory(dir_path, dir_name):
-    """Create a directory for each category in order to move all book's images
-    into theirs corresponding category
+def make_directory(dir_path: str, dir_name: str) -> str:
+    """Create a sub-directory from a given directory path and return the
+    path of this sub-directory.
     """
+
     new_dir_path = os.path.join(dir_path, dir_name)
     if not os.path.exists(new_dir_path):
         os.mkdir(new_dir_path)
     return new_dir_path
 
-def demo(nbr_keys):
-    # For demo
-    categories = get_first_link_for_categories(url)
+
+def demo(nbr_categories: int) -> None:
+    """For a demo."""
+
+    categories = get_first_link_for_categories(URL)
     keys = list(categories.keys())
-    keys_ = keys[0:nbr_keys:1]
+    keys_ = keys[0:nbr_categories:1]
     print(keys_)
     categories_ = {key: categories[key] for key in keys_}
     print(categories_)
-    # scrape categories and save results to csv_data directory and images directory.
+    # scrape categories and save results to csv_data directory and images directory
     print("Start of saving csv")
     save_category_csv(categories_)
     print("End of saving csv")
-    print("="*10)
-    print("Start of saving csv")
+    print("=" * 10)
+    print("Start of saving images")
     save_category_images(categories_)
-    print("End of saving csv")
+    print("End of saving images")
 
-def main():
-    categories = get_first_link_for_categories(url)
-    # scrape categories and save results to csv_data directory and images directory.
+
+def main() -> None:
+    """For running the project."""
+
+    # Scrape categories and save results to csv_data directory and images directory.
+    categories = get_first_link_for_categories(URL)
     print("Start of saving csv")
     save_category_csv(categories)
     print("End of saving csv")
-    print("="*10)
-    print("Start of saving csv")
+    print("=" * 10)
+    print("Start of saving images")
     save_category_images(categories)
-    print("End of saving csv")
+    print("End of saving images")
+
 
 if __name__ == "__main__":
     # For demo
-    nbr_categories = 2
-    demo(nbr_categories)
+    # nbr_categories = 2
+    # demo(nbr_categories)
 
     # For running the project
-    # main()
-
-
-
-
-
+    main()
 
