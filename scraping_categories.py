@@ -83,7 +83,6 @@ def save_category_csv(categories: dict) -> None:
         with open(file_name, 'w', newline='') as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
             writer.writeheader()
-
             for link in all_book_links:
                 book_info = book.get_book_info(link)
                 writer.writerow(book_info)
@@ -104,7 +103,6 @@ def save_category_images(categories: dict) -> None:
         os.chdir(sub_dir_path)
         all_book_links = category.get_all_book_links_per_category(
             category_link)
-
         for link in all_book_links:
             book_info = book.get_book_info(link)
             image_url, title = book_info['image_url'], book_info['title']
@@ -136,6 +134,7 @@ def make_directory(dir_path: str, dir_name: str) -> str:
 def demo(nbr_categories: int) -> None:
     """For a demo."""
 
+    print(f'For a demo with {nbr_categories} categories.')
     categories = get_first_link_for_categories(URL)
     keys = list(categories.keys())
     keys_ = keys[0:nbr_categories:1]
