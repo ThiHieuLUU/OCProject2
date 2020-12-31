@@ -37,68 +37,72 @@ def get_book_info(book_url: str) -> dict:
     """
 
     response = requests.get(book_url, headers=HEADERS)
-    # To deal with Weird characters, using decode("utf-8")
-    soup = BeautifulSoup(response.content.decode("utf-8"), "lxml")
+    if response.status_code == 200:
+        # To deal with Weird characters, using decode("utf-8")
+        soup = BeautifulSoup(response.content.decode("utf-8"), "lxml")
 
-    # Get the article url
-    book_info = {"product_page_url": book_url}
+        # Get the article url
+        book_info = {"product_page_url": book_url}
 
-    # Find the universal product code of article
-    upc = book_url.split(sep="/")[4].split(sep="_")[-1]
-    book_info["universal_product_code"] = upc
+        # Find the universal product code of article
+        upc = book_url.split(sep="/")[4].split(sep="_")[-1]
+        book_info["universal_product_code"] = upc
 
-    # Find the title of article
-    title = soup.find("li", class_="active").text
-    # To deal with some special characters in the title
-    bad_chars = [";", ":", "!", "*", "#", "(", ")", "/", ",", "."]
-    title = "".join(i for i in title if i not in bad_chars)
-    title = title.replace(" ", "_")
-    book_info["title"] = title
+        # Find the title of article
+        title = soup.find("li", class_="active").text
+        # To deal with some special characters in the title
+        bad_chars = [";", ":", "!", "*", "#", "(", ")", "/", ",", "."]
+        title = "".join(i for i in title if i not in bad_chars)
+        title = title.replace(" ", "_")
+        book_info["title"] = title
 
-    # Find some information of article like that: price, number available, etc.
-    main_info = soup.find("table", class_=re.compile("table table-striped"))
+        # Find some information of article like that: price, number available, etc.
+        main_info = soup.find("table", class_=re.compile("table table-striped"))
 
-    # Find the price excluding tax of article
-    price_excl_tax = (
-        main_info.find("th", string=re.compile(r"Price \(excl\. tax\)"))
-        .find_next("td")
-        .text
-    )
-    book_info["price_excluding_tax"] = price_excl_tax
+        # Find the price excluding tax of article
+        price_excl_tax = (
+            main_info.find("th", string=re.compile(r"Price \(excl\. tax\)"))
+            .find_next("td")
+            .text
+        )
+        book_info["price_excluding_tax"] = price_excl_tax
 
-    # Find the price including tax of article
-    price_incl_tax = (
-        main_info.find("th", string=re.compile(r"Price \(incl\. tax\)"))
-        .find_next("td")
-        .text
-    )
-    book_info["price_including_tax"] = price_incl_tax
+        # Find the price including tax of article
+        price_incl_tax = (
+            main_info.find("th", string=re.compile(r"Price \(incl\. tax\)"))
+            .find_next("td")
+            .text
+        )
+        book_info["price_including_tax"] = price_incl_tax
 
-    # Find the available number of article
-    number_available = (
-        main_info.find("th", string=re.compile("Availability")).find_next("td").text
-    )
-    book_info["number_available"] = number_available
+        # Find the available number of article
+        number_available = (
+            main_info.find("th", string=re.compile("Availability")).find_next("td").text
+        )
+        book_info["number_available"] = number_available
 
-    # Find the category of article
-    category = soup.find_all("a", href=re.compile("../category/"))[1].text
-    book_info["category"] = category
+        # Find the category of article
+        category = soup.find_all("a", href=re.compile("../category/"))[1].text
+        book_info["category"] = category
 
-    # Find the star rating
-    star_rating = soup.find("p", class_=re.compile("star-rating "))["class"][1]
-    book_info["review_rating"] = star_rating
+        # Find the star rating
+        star_rating = soup.find("p", class_=re.compile("star-rating "))["class"][1]
+        book_info["review_rating"] = star_rating
 
-    # Find the product description
-    try:
-        product_description = soup.find("div", id="product_description").find_next("p").text
-        book_info["product_description"] = product_description
-    # To deal with AttributeError: 'NoneType'
-    except AttributeError:
-        book_info["product_description"] = ''
+        # Find the product description
+        try:
+            product_description = soup.find("div", id="product_description").find_next("p").text
+            book_info["product_description"] = product_description
+        # To deal with AttributeError: 'NoneType'
+        except AttributeError:
+            book_info["product_description"] = ''
 
-    # Find the image url
-    prefix = "http://books.toscrape.com/"
-    image_url = soup.find("img")["src"]
-    image_url = prefix + image_url.split("/", 2)[-1]
-    book_info["image_url"] = image_url
-    return book_info
+        # Find the image url
+        prefix = "http://books.toscrape.com/"
+        image_url = soup.find("img")["src"]
+        image_url = prefix + image_url.split("/", 2)[-1]
+        book_info["image_url"] = image_url
+        return book_info
+    else:
+        raise Exception("Error on getting url")
+

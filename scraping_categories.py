@@ -34,26 +34,30 @@ def get_first_link_for_categories(url: str) -> dict:
     """Retrieve all first category links from the url of the Home page."""
 
     response = requests.get(url, headers=HEADERS)
-    soup = BeautifulSoup(response.text, 'lxml')
 
-    # Find the first links for all categories
-    categories = {}
-    links = []
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'lxml')
 
-    category_links = soup.find('div', class_="side_categories") \
-        .find('ul') \
-        .find('li') \
-        .find('ul') \
-        .find_all('a', href=re.compile('catalogue'))
+        # Find the first links for all categories
+        categories = {}
+        links = []
 
-    # Built and get all first category links
-    for category_link in category_links:
-        links.append(url + category_link['href'])
+        category_links = soup.find('div', class_="side_categories") \
+            .find('ul') \
+            .find('li') \
+            .find('ul') \
+            .find_all('a', href=re.compile('catalogue'))
 
-    for link in links:
-        category_name = link.rsplit('/', 2)[-2]
-        categories[category_name] = link
-    return categories
+        # Built and get all first category links
+        for category_link in category_links:
+            links.append(url + category_link['href'])
+
+        for link in links:
+            category_name = link.rsplit('/', 2)[-2]
+            categories[category_name] = link
+        return categories
+    else:
+        raise Exception("Error on getting url")
 
 
 def save_category_csv(categories: dict) -> None:
@@ -113,12 +117,14 @@ def save_image(image_url: str, title: str) -> None:
     """Download an image from its url and save it in current directory."""
 
     response = requests.get(image_url)
-    img_format = image_url.rsplit(".", 1)[-1]  # jpg, png, etc.
-    image_file_name = title + "." + img_format
-    img_file = open(image_file_name, "wb")
-    img_file.write(response.content)
-    img_file.close()
-
+    if response.status_code == 200:
+        img_format = image_url.rsplit(".", 1)[-1]  # jpg, png, etc.
+        image_file_name = title + "." + img_format
+        img_file = open(image_file_name, "wb")
+        img_file.write(response.content)
+        img_file.close()
+    else:
+        raise Exception("Error on getting url")
 
 def make_directory(dir_path: str, dir_name: str) -> str:
     """Create a sub-directory from a given directory path and return the

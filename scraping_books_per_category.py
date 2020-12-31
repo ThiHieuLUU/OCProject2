@@ -50,18 +50,22 @@ def get_all_book_links_per_category(url: str) -> list:
     while res:
         # Get all book links of a category page
         response = requests.get(url, headers=HEADERS)
-        soup = BeautifulSoup(response.text, 'lxml')
-        book_names = soup.find_all('a', href=re.compile('^../../../'),
-                                   title=re.compile('.*'))
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'lxml')
+            book_names = soup.find_all('a', href=re.compile('^../../../'),
+                                       title=re.compile('.*'))
 
-        prefix = "http://books.toscrape.com/catalogue/"
-        for book in book_names:
-            book_link_split = book['href'].split("../../../", 1)
-            book_link = prefix + book_link_split[-1]
-            all_book_links.append(book_link)
+            prefix = "http://books.toscrape.com/catalogue/"
+            for book in book_names:
+                book_link_split = book['href'].split("../../../", 1)
+                book_link = prefix + book_link_split[-1]
+                all_book_links.append(book_link)
 
-        # Check if the current page has the next page
-        res = has_next(soup)[0]
-        if res:
-            url = get_next_page(url, soup)
-    return all_book_links
+            # Check if the current page has the next page
+            res = has_next(soup)[0]
+            if res:
+                url = get_next_page(url, soup)
+            return all_book_links
+        else:
+            raise Exception("Error on getting url")
+
